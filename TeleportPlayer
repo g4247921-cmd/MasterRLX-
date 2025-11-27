@@ -1,0 +1,77 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+
+local Frame = Instance.new("Frame")
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 250, 0, 85) -- dinaikin biar muat label
+Frame.Position = UDim2.new(0, 95, 0, 10)
+Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Frame.Active = true
+Frame.Draggable = true
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Parent = Frame
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "Teleport to Player"
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+
+-- Label Project
+local ProjectLabel = Instance.new("TextLabel")
+ProjectLabel.Parent = Frame
+ProjectLabel.Size = UDim2.new(1, 0, 0, 20)
+ProjectLabel.Position = UDim2.new(0, 0, 0, 35)
+ProjectLabel.BackgroundTransparency = 1
+ProjectLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+ProjectLabel.Text = "🔥 Project By Master 🔥"
+ProjectLabel.Font = Enum.Font.SourceSansBold
+ProjectLabel.TextSize = 16
+
+-- Player list
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Parent = Frame
+PlayerList.Size = UDim2.new(1, 0, 2, 65)
+PlayerList.Position = UDim2.new(0, 0, 0, 60) -- diturunin biar ga tabrakan
+PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayerList.BackgroundColor3 = Color3.fromRGB(0, 25, 0)
+
+local function UpdatePlayers()
+    for _, v in pairs(PlayerList:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
+    end
+
+    local yPos = 5
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local Btn = Instance.new("TextButton")
+            Btn.Parent = PlayerList
+            Btn.Size = UDim2.new(1, -10, 0, 30)
+            Btn.Position = UDim2.new(0, 5, 0, yPos)
+            Btn.Text = player.Name
+            Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Btn.Font = Enum.Font.SourceSans
+            Btn.TextSize = 16
+
+            Btn.MouseButton1Click:Connect(function()
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
+                end
+            end)
+
+            yPos = yPos + 35
+        end
+    end
+    PlayerList.CanvasSize = UDim2.new(0, 0, 0, yPos)
+end
+
+UpdatePlayers()
+Players.PlayerAdded:Connect(UpdatePlayers)
+Players.PlayerRemoving:Connect(UpdatePlayers)

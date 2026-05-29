@@ -1,77 +1,375 @@
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
+local WorkspaceCamera = workspace.CurrentCamera
 
--- GUI
+-- GUI Utama
 local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleportSystem &Spy-ByAnjaszrelaxz⚡"
 ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
 
-local Frame = Instance.new("Frame")
-Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 250, 0, 85) -- dinaikin biar muat label
-Frame.Position = UDim2.new(0, 95, 0, 10)
-Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-Frame.Active = true
-Frame.Draggable = true
-
--- Title
-local Title = Instance.new("TextLabel")
-Title.Parent = Frame
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Text = "Teleport to Player"
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 18
-
--- Label Project
-local ProjectLabel = Instance.new("TextLabel")
-ProjectLabel.Parent = Frame
-ProjectLabel.Size = UDim2.new(1, 0, 0, 20)
-ProjectLabel.Position = UDim2.new(0, 0, 0, 35)
-ProjectLabel.BackgroundTransparency = 1
-ProjectLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-ProjectLabel.Text = "🔥 Project By Master 🔥"
-ProjectLabel.Font = Enum.Font.SourceSansBold
-ProjectLabel.TextSize = 16
-
--- Player list
-local PlayerList = Instance.new("ScrollingFrame")
-PlayerList.Parent = Frame
-PlayerList.Size = UDim2.new(1, 0, 2, 65)
-PlayerList.Position = UDim2.new(0, 0, 0, 60) -- diturunin biar ga tabrakan
-PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
-PlayerList.BackgroundColor3 = Color3.fromRGB(0, 25, 0)
-
-local function UpdatePlayers()
-    for _, v in pairs(PlayerList:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
-    end
-
-    local yPos = 5
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local Btn = Instance.new("TextButton")
-            Btn.Parent = PlayerList
-            Btn.Size = UDim2.new(1, -10, 0, 30)
-            Btn.Position = UDim2.new(0, 5, 0, yPos)
-            Btn.Text = player.Name
-            Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Btn.Font = Enum.Font.SourceSans
-            Btn.TextSize = 16
-
-            Btn.MouseButton1Click:Connect(function()
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
-                end
-            end)
-
-            yPos = yPos + 35
-        end
-    end
-    PlayerList.CanvasSize = UDim2.new(0, 0, 0, yPos)
+-- FUNGSI MEMBUAT TEXT AUTO-SCALE RAPI (Mencegah font terlalu besar/kecah)
+local function ApplyTextScale(textLabel, min, max)
+    textLabel.TextScaled = true
+    local constraint = Instance.new("UITextSizeConstraint")
+    constraint.MinTextSize = min or 8
+    constraint.MaxTextSize = max or 14
+    constraint.Parent = textLabel
 end
 
-UpdatePlayers()
-Players.PlayerAdded:Connect(UpdatePlayers)
-Players.PlayerRemoving:Connect(UpdatePlayers)
+-- SISTEM NOTIFIKASI MEWAH (Auto-Scale & Rapih)
+local function Notify(msg)
+    local NotifFrame = Instance.new("Frame")
+    NotifFrame.Size = UDim2.new(0, 220, 0, 40)
+    NotifFrame.Position = UDim2.new(1, 10, 0, 20)
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+    NotifFrame.BackgroundTransparency = 0.1
+    NotifFrame.Parent = ScreenGui
+    
+    local NotifCorner = Instance.new("UICorner")
+    NotifCorner.CornerRadius = UDim.new(0, 8)
+    NotifCorner.Parent = NotifFrame
+    
+    local NotifStroke = Instance.new("UIStroke")
+    NotifStroke.Thickness = 1
+    NotifStroke.Color = Color3.fromRGB(212, 175, 55)
+    NotifStroke.Parent = NotifFrame
+    
+    local NotifText = Instance.new("TextLabel")
+    NotifText.Size = UDim2.new(1, -20, 1, -10)
+    NotifText.Position = UDim2.new(0, 10, 0, 5)
+    NotifText.BackgroundTransparency = 1
+    NotifText.Text = msg
+    NotifText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NotifText.Font = Enum.Font.GothamBold
+    NotifText.TextXAlignment = Enum.TextXAlignment.Center
+    NotifText.Parent = NotifFrame
+    ApplyTextScale(NotifText, 9, 12)
+    
+    TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -240, 0, 20)}):Play()
+    
+    task.delay(2.5, function()
+        local tween = TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 10, 0, 20)})
+        tween:Play()
+        tween.Completed:Connect(function()
+            NotifFrame:Destroy()
+        end)
+    end)
+end
+
+-- Main Frame (Glassmorphism)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 290, 0, 380) 
+MainFrame.Position = UDim2.new(0.5, -145, 0.4, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+MainFrame.BackgroundTransparency = 0.25
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true 
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.Parent = MainFrame
+
+-- UI Stroke Gradient Animasi
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 1.8
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
+
+local StrokeGradient = Instance.new("UIGradient")
+StrokeGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(212, 175, 55)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 235, 170)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(212, 175, 55))
+})
+StrokeGradient.Parent = MainStroke
+
+task.spawn(function()
+    while MainFrame.Parent do
+        for i = 0, 1, 0.01 do
+            StrokeGradient.Offset = Vector2.new(i, 0)
+            task.wait(0.02)
+        end
+    end
+end)
+
+-- Top Bar
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+TopBar.BackgroundTransparency = 0.25
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 14)
+TopCorner.Parent = TopBar
+
+local TopHide = Instance.new("Frame")
+TopHide.Size = UDim2.new(1, 0, 0, 10)
+TopHide.Position = UDim2.new(0, 0, 1, -10)
+TopHide.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+TopHide.BackgroundTransparency = 0.25
+TopHide.BorderSizePixel = 0
+TopHide.Parent = TopBar
+
+-- Judul (Auto-Scale Terkontrol)
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -80, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.BackgroundTransparency = 1
+Title.RichText = true
+Title.Text = "<font color='rgb(212,175,55)'><b>VIP</b></font> TP &amp; SPY CAMERA"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+ApplyTextScale(Title, 10, 13)
+
+-- Tombol Close (✕)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 160)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TopBar
+ApplyTextScale(CloseBtn, 10, 14)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    WorkspaceCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid") or LocalPlayer.Character
+    ScreenGui:Destroy()
+end)
+
+-- Search Bar
+local SearchFrame = Instance.new("Frame")
+SearchFrame.Size = UDim2.new(1, -24, 0, 32)
+SearchFrame.Position = UDim2.new(0, 12, 0, 52)
+SearchFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+SearchFrame.BackgroundTransparency = 0.3
+SearchFrame.BorderSizePixel = 0
+SearchFrame.Parent = MainFrame
+
+Instance.new("UICorner", SearchFrame).CornerRadius = UDim.new(0, 8)
+
+local SearchBox = Instance.new("TextBox")
+SearchBox.Size = UDim2.new(1, -20, 1, 0)
+SearchBox.Position = UDim2.new(0, 10, 0, 0)
+SearchBox.BackgroundTransparency = 1
+SearchBox.Text = ""
+SearchBox.PlaceholderText = "🔍 Cari Player / Target..."
+SearchBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 115)
+SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.Font = Enum.Font.GothamSemibold
+SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+SearchBox.Parent = SearchFrame
+ApplyTextScale(SearchBox, 9, 11)
+
+-- Scrolling List
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(1, -20, 1, -105)
+PlayerList.Position = UDim2.new(0, 10, 0, 95)
+PlayerList.BackgroundTransparency = 1
+PlayerList.BorderSizePixel = 0
+PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayerList.ScrollBarThickness = 2
+PlayerList.ScrollBarImageColor3 = Color3.fromRGB(212, 175, 55)
+PlayerList.Parent = MainFrame
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ListLayout.Padding = UDim.new(0, 6)
+ListLayout.Parent = PlayerList
+
+-- Fungsi Avatar Headshot (Thread Safe & Cepat)
+local function GetUserHeadshot(userId, imageLabel)
+    task.spawn(function()
+        local content, isReady = nil, false
+        pcall(function()
+            content, isReady = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+        end)
+        if isReady and content then
+            imageLabel.Image = content
+        else
+            imageLabel.Image = "rbxassetid://6074241743"
+        end
+    end)
+end
+
+local currentViewedPlayer = nil
+
+-- Fungsi Inti Refresh UI List Player
+local function RefreshList(filterText)
+    filterText = filterText or ""
+    
+    for _, item in pairs(PlayerList:GetChildren()) do
+        if item:IsA("Frame") then item:Destroy() end
+    end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local matchName = string.find(string.lower(player.Name), string.lower(filterText))
+            local matchDisplay = string.find(string.lower(player.DisplayName), string.lower(filterText))
+            
+            if filterText == "" or matchName or matchDisplay then
+                
+                -- Player Card
+                local Card = Instance.new("Frame")
+                Card.Size = UDim2.new(1, -4, 0, 45)
+                Card.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+                Card.BackgroundTransparency = 0.2
+                Card.BorderSizePixel = 0
+                Card.Parent = PlayerList
+                Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
+                
+                -- Avatar Frame
+                local AvaFrame = Instance.new("Frame")
+                AvaFrame.Size = UDim2.new(0, 34, 0, 34)
+                AvaFrame.Position = UDim2.new(0, 6, 0.5, -17)
+                AvaFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+                AvaFrame.Parent = Card
+                Instance.new("UICorner", AvaFrame).CornerRadius = UDim.new(1, 0)
+                
+                local AvaImage = Instance.new("ImageLabel")
+                AvaImage.Size = UDim2.new(1, 0, 1, 0)
+                AvaImage.BackgroundTransparency = 1
+                AvaImage.Parent = AvaFrame
+                Instance.new("UICorner", AvaImage).CornerRadius = UDim.new(1, 0)
+                GetUserHeadshot(player.UserId, AvaImage)
+
+                -- Teks Info Player (Diatur sizenya agar pas & presisi)
+                local InfoLabel = Instance.new("TextLabel")
+                InfoLabel.Size = UDim2.new(0.4, 0, 0.8, 0)
+                InfoLabel.Position = UDim2.new(0, 46, 0.1, 0)
+                InfoLabel.BackgroundTransparency = 1
+                InfoLabel.RichText = true
+                InfoLabel.Text = "<font color='rgb(255,255,255)'><b>" .. player.DisplayName .. "</b></font><br/><font color='rgb(140,140,150)'>@" .. player.Name .. "</font>"
+                InfoLabel.Font = Enum.Font.GothamMedium
+                InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+                InfoLabel.Parent = Card
+                ApplyTextScale(InfoLabel, 8, 11)
+
+                -- Indikator Jarak Real-time
+                local DistanceLabel = Instance.new("TextLabel")
+                DistanceLabel.Size = UDim2.new(0.18, 0, 0.5, 0)
+                DistanceLabel.Position = UDim2.new(1, -145, 0.25, 0)
+                DistanceLabel.BackgroundTransparency = 1
+                DistanceLabel.RichText = true
+                DistanceLabel.Font = Enum.Font.GothamBold
+                DistanceLabel.TextXAlignment = Enum.TextXAlignment.Right
+                DistanceLabel.Parent = Card
+                ApplyTextScale(DistanceLabel, 8, 10)
+                
+                local distConnection
+                distConnection = RunService.RenderStepped:Connect(function()
+                    if not Card or not Card.Parent then distConnection:Disconnect() return end
+                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                        DistanceLabel.Text = "<font color='rgb(212,175,55)'>" .. string.format("%.0f", distance) .. "</font><font color='rgb(100,100,110)'>m</font>"
+                    else
+                        DistanceLabel.Text = "<font color='rgb(255,75,75)'>Dead</font>"
+                    end
+                end)
+
+                -- Tombol VIEW CAMERA (Spy)
+                local ViewBtn = Instance.new("TextButton")
+                ViewBtn.Size = UDim2.new(0, 42, 0, 24)
+                ViewBtn.Position = UDim2.new(1, -92, 0.5, -12)
+                ViewBtn.BackgroundColor3 = Color3.fromRGB(0, 128, 255)
+                ViewBtn.Font = Enum.Font.GothamBold
+                ViewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                ViewBtn.Parent = Card
+                Instance.new("UICorner", ViewBtn).CornerRadius = UDim.new(0, 6)
+                ApplyTextScale(ViewBtn, 7, 9)
+
+                if currentViewedPlayer == player then
+                    ViewBtn.Text = "UNVIEW"
+                    ViewBtn.BackgroundColor3 = Color3.fromRGB(255, 75, 75)
+                else
+                    ViewBtn.Text = "VIEW"
+                    ViewBtn.BackgroundColor3 = Color3.fromRGB(0, 128, 255)
+                end
+
+                -- Tombol TELEPORT (TP)
+                local TpBtn = Instance.new("TextButton")
+                TpBtn.Size = UDim2.new(0, 38, 0, 24)
+                TpBtn.Position = UDim2.new(1, -44, 0.5, -12)
+                TpBtn.BackgroundColor3 = Color3.fromRGB(212, 175, 55)
+                TpBtn.Text = (currentViewedPlayer == player) and "HERE" or "TP"
+                TpBtn.Font = Enum.Font.GothamBold
+                TpBtn.TextColor3 = Color3.fromRGB(15, 15, 20)
+                TpBtn.Parent = Card
+                Instance.new("UICorner", TpBtn).CornerRadius = UDim.new(0, 6)
+                ApplyTextScale(TpBtn, 7, 9)
+
+                -- Logika VIEW CAMERA
+                ViewBtn.MouseButton1Click:Connect(function()
+                    if currentViewedPlayer == player then
+                        currentViewedPlayer = nil
+                        local myHumanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                        WorkspaceCamera.CameraSubject = myHumanoid or LocalPlayer.Character
+                        Notify("Kamera kembali ke kamu")
+                    else
+                        if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+                            currentViewedPlayer = player
+                            WorkspaceCamera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid")
+                            Notify("Mengintip: " .. player.DisplayName)
+                        end
+                    end
+                    RefreshList(SearchBox.Text)
+                end)
+
+                -- Logika TELEPORT
+                TpBtn.MouseButton1Click:Connect(function()
+                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 2, 0)
+                        Notify("Teleport ke " .. player.DisplayName)
+                    end
+                end)
+            end
+        end
+    end
+    PlayerList.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+end
+
+-- Sistem Loop Proteksi Kamera
+RunService.Heartbeat:Connect(function()
+    if currentViewedPlayer then
+        if not currentViewedPlayer.Parent or not currentViewedPlayer.Character or not currentViewedPlayer.Character:FindFirstChildOfClass("Humanoid") or currentViewedPlayer.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
+            currentViewedPlayer = nil
+            local myHumanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            WorkspaceCamera.CameraSubject = myHumanoid or LocalPlayer.Character
+            Notify("Target Mati / Keluar server")
+            RefreshList(SearchBox.Text)
+        else
+            if WorkspaceCamera.CameraSubject ~= currentViewedPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                WorkspaceCamera.CameraSubject = currentViewedPlayer.Character:FindFirstChildOfClass("Humanoid")
+            end
+        end
+    end
+end)
+
+-- Listener Event Input & Player Update
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function() RefreshList(SearchBox.Text) end)
+Players.PlayerAdded:Connect(function(p) 
+    Notify(p.DisplayName .. " Join Server")
+    RefreshList(SearchBox.Text) 
+end)
+Players.PlayerRemoving:Connect(function(p) 
+    Notify(p.DisplayName .. " Leave Server")
+    if currentViewedPlayer == p then
+        currentViewedPlayer = nil
+        local myHumanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        WorkspaceCamera.CameraSubject = myHumanoid or LocalPlayer.Character
+    end
+    RefreshList(SearchBox.Text) 
+end)
+
+-- Jalankan Pertama Kali
+RefreshList()
